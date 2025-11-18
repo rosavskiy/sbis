@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <title>SBIS ЭДО — тест авторизации</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        margin: 0;
+        padding: 20px;
+        background: #f5f5f7;
+      }
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+      }
+      h1 {
+        margin-top: 0;
+        font-size: 22px;
+      }
+      label {
+        display: block;
+        margin-top: 12px;
+        font-weight: 500;
+      }
+      input, textarea {
+        width: 100%;
+        padding: 8px 10px;
+        margin-top: 4px;
+        box-sizing: border-box;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+        font-family: monospace;
+        font-size: 13px;
+      }
+      button {
+        margin-top: 16px;
+        padding: 8px 16px;
+        border-radius: 4px;
+        border: none;
+        background: #2563eb;
+        color: #fff;
+        font-size: 14px;
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.6;
+        cursor: default;
+      }
+      pre {
+        background: #0b1020;
+        color: #e5e7eb;
+        padding: 12px;
+        border-radius: 4px;
+        overflow: auto;
+        font-size: 12px;
+        max-height: 300px;
+      }
+      .row {
+        display: flex;
+        gap: 12px;
+      }
+      .row > div {
+        flex: 1;
+      }
+      .auth-row {
+        display: flex;
+        gap: 12px;
+        align-items: flex-end;
+      }
+      .auth-row label {
+        margin-top: 0;
+        flex: 1;
+      }
+      .auth-row button {
+        margin-top: 0;
+        white-space: nowrap;
+      }
+      .status {
+        margin-top: 0;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 14px;
+        white-space: nowrap;
+      }
+      .status.ok {
+        color: #16a34a;
+      }
+      .status.error {
+        color: #dc2626;
+      }
+      .toggle-btn {
+        background: #64748b;
+        margin-top: 8px;
+      }
+      .json-details {
+        display: none;
+        margin-top: 8px;
+      }
+      .json-details.visible {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>SBIS ЭДО — тест авторизации</h1>
+      <form id="auth-form">
+        <input
+          type="hidden"
+          name="baseUrl"
+          value="https://online.sbis.ru/auth/service/"
+        />
+        <div class="auth-row">
+          <label>
+            Логин
+            <input type="text" name="login" required />
+          </label>
+          <label>
+            Пароль
+            <input type="password" name="password" required />
+          </label>
+          <button type="submit">Подключиться</button>
+          <div class="status" id="auth-status"></div>
+        </div>
+      </form>
+      <button class="toggle-btn" id="auth-toggle" style="display: none;">Показать JSON</button>
+      <div class="json-details" id="auth-json">
+        <pre id="json">—</pre>
+      </div>
+    </div>
+
+    <div class="container" style="margin-top: 24px">
+      <h1>SBIS ЭДО — загрузка документа</h1>
+      <form id="upload-form">
+        <input
+          type="hidden"
+          name="docBaseUrl"
+          value="https://online.sbis.ru/service/?srv=1"
+        />
+        <input type="hidden" name="sessionId" />
+        <input type="hidden" name="clientInn" />
+        <input type="hidden" name="clientKpp" />
+        <input type="hidden" name="clientLastName" />
+        <input type="hidden" name="clientFirstName" />
+        <input type="hidden" name="clientMiddleName" />
+        <input type="hidden" name="clientSnils" />
+        <input type="hidden" name="ourInn" />
+        <input type="hidden" name="ourKpp" />
+        <input type="hidden" name="ourLastName" />
+        <input type="hidden" name="ourFirstName" />
+        <input type="hidden" name="ourMiddleName" />
+        <input type="hidden" name="ourSnils" />
+        <input type="hidden" name="number" />
+        <input type="hidden" name="date" />
+        <input type="hidden" name="note" />
+
+        <label>
+          Тип документа
+          <select name="docType">
+            <option value="ДоговорИсх" selected>ДоговорИсх</option>
+            <option value="Договор">Договор</option>
+            <option value="ДокОтгрИсх">ДокОтгрИсх (пример из доки)</option>
+            <option value="Прочий">Прочий (кастомный)</option>
+          </select>
+        </label>
+
+        <div class="auth-row" style="margin-top: 16px;">
+          <label>
+            Файл .docx
+            <input type="file" name="file" accept=".docx" />
+          </label>
+          <button type="submit">Загрузить файл</button>
+          <div class="status" id="upload-status"></div>
+        </div>
+
+        <div class="auth-row" style="margin-top: 12px;">
+          <label>
+            Папка с документами (.doc/.docx)
+            <input
+              type="file"
+              id="folder-input"
+              webkitdirectory
+              directory
+              multiple
+              accept=".doc,.docx"
+            />
+          </label>
+          <button type="button" id="upload-folder-btn">Загрузить папку</button>
+          <div class="status" id="batch-status"></div>
+        </div>
+      </form>
+
+      <button class="toggle-btn" id="upload-toggle" style="display: none;">Показать JSON</button>
+      <div class="json-details" id="upload-json-details">
+        <pre id="upload-json">—</pre>
+      </div>
+
+      <button class="toggle-btn" id="batch-toggle" style="display: none; margin-top: 12px;">Показать JSON (пакетная)</button>
+      <div class="json-details" id="batch-json-details">
+        <pre id="batch-result">—</pre>
+      </div>
+    </div>
+
+    <script>
+      const form = document.getElementById('auth-form');
+      const authStatusEl = document.getElementById('auth-status');
+      const authToggleBtn = document.getElementById('auth-toggle');
+      const authJsonDiv = document.getElementById('auth-json');
+      const jsonEl = document.getElementById('json');
+
+      authToggleBtn.addEventListener('click', () => {
+        authJsonDiv.classList.toggle('visible');
+        authToggleBtn.textContent = authJsonDiv.classList.contains('visible')
+          ? 'Скрыть JSON'
+          : 'Показать JSON';
+      });
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const button = form.querySelector('button');
+        button.disabled = true;
+        authStatusEl.textContent = '';
+        authStatusEl.className = 'status';
+        authToggleBtn.style.display = 'none';
+        authJsonDiv.classList.remove('visible');
+
+        const formData = new FormData(form);
+        const payload = {
+          baseUrl: formData.get('baseUrl'),
+          login: formData.get('login'),
+          password: formData.get('password'),
+        };
+
+        try {
+          const res = await fetch('/api/auth', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+          });
+
+          const data = await res.json();
+          jsonEl.textContent = JSON.stringify(data, null, 2);
+          authToggleBtn.style.display = 'inline-block';
+
+          if (data.sessionId && !data.error) {
+            authStatusEl.textContent = 'OK';
+            authStatusEl.classList.add('ok');
+          } else {
+            authStatusEl.textContent = 'Ошибка';
+            authStatusEl.classList.add('error');
+          }
+
+          // Автоподстановка идентификатора сессии и базовых реквизитов во второй блок
+          try {
+            if (data.sessionId) {
+              const uploadForm = document.getElementById('upload-form');
+              if (uploadForm) {
+                const sessionInput = uploadForm.querySelector('input[name="sessionId"]');
+                if (sessionInput) sessionInput.value = data.sessionId;
+              }
+            }
+
+            // Если пришли наши организации — подставим первую подходящую (ЮЛ или ФЛ/ИП)
+            if (Array.isArray(data.ourOrganizations) && data.ourOrganizations.length > 0) {
+              const org = data.ourOrganizations.find((o) => o.СвЮЛ || o.СвФЛ) ||
+                data.ourOrganizations[0];
+
+              const uploadForm = document.getElementById('upload-form');
+              if (uploadForm && org) {
+                const ourInnInput = uploadForm.querySelector('input[name="ourInn"]');
+                const ourKppInput = uploadForm.querySelector('input[name="ourKpp"]');
+
+                if (org.СвЮЛ) {
+                  if (ourInnInput && !ourInnInput.value) ourInnInput.value = org.СвЮЛ.ИНН || '';
+                  if (ourKppInput && !ourKppInput.value) ourKppInput.value = org.СвЮЛ.КПП || '';
+                } else if (org.СвФЛ) {
+                  if (ourInnInput && !ourInnInput.value) ourInnInput.value = org.СвФЛ.ИНН || '';
+                  if (ourKppInput && !ourKppInput.value) ourKppInput.value = '';
+                }
+              }
+            }
+
+            // Если в ответе появятся реквизиты нашей организации, можно будет распарсить их здесь
+            // и подставить в поля ourInn/ourKpp.
+          } catch (_) {
+            // тихо игнорируем ошибки автозаполнения UI
+          }
+        } catch (err) {
+          summaryEl.textContent = 'Ошибка: ' + err;
+          jsonEl.textContent = '';
+        } finally {
+          button.disabled = false;
+        }
+      });
+
+      const uploadForm = document.getElementById('upload-form');
+      const uploadStatusEl = document.getElementById('upload-status');
+      const uploadToggleBtn = document.getElementById('upload-toggle');
+      const uploadJsonDiv = document.getElementById('upload-json-details');
+      const uploadJsonEl = document.getElementById('upload-json');
+      const batchStatusEl = document.getElementById('batch-status');
+      const batchToggleBtn = document.getElementById('batch-toggle');
+      const batchJsonDiv = document.getElementById('batch-json-details');
+      const batchResultEl = document.getElementById('batch-result');
+      const folderInput = document.getElementById('folder-input');
+      const folderButton = document.getElementById('upload-folder-btn');
+
+      uploadToggleBtn.addEventListener('click', () => {
+        uploadJsonDiv.classList.toggle('visible');
+        uploadToggleBtn.textContent = uploadJsonDiv.classList.contains('visible')
+          ? 'Скрыть JSON'
+          : 'Показать JSON';
+      });
+
+      batchToggleBtn.addEventListener('click', () => {
+        batchJsonDiv.classList.toggle('visible');
+        batchToggleBtn.textContent = batchJsonDiv.classList.contains('visible')
+          ? 'Скрыть JSON (пакетная)'
+          : 'Показать JSON (пакетная)';
+      });
+
+      // При выборе файла пытаемся вытащить ИНН клиента из имени файла
+      const fileInput = uploadForm.querySelector('input[name="file"]');
+      if (fileInput) {
+        fileInput.addEventListener('change', () => {
+          const file = fileInput.files && fileInput.files[0];
+          if (!file) return;
+
+          const name = file.name || '';
+          // Ищем подпоследовательность "ИННxxxxxxxxxx" или "ИННxxxxxxxxxxxx"
+          const match = name.match(/ИНН(\d{12}|\d{10})/i);
+          if (match) {
+            const inn = match[1];
+            const clientInnInput = uploadForm.querySelector('input[name="clientInn"]');
+            if (clientInnInput && !clientInnInput.value) {
+              clientInnInput.value = inn;
+            }
+          }
+
+          // Ищем подпоследовательность "КППxxxxxxxxx"
+          const kppMatch = name.match(/КПП(\d{9})/i);
+          if (kppMatch) {
+            const kpp = kppMatch[1];
+            const clientKppInput = uploadForm.querySelector('input[name="clientKpp"]');
+            if (clientKppInput && !clientKppInput.value) {
+              clientKppInput.value = kpp;
+            }
+          }
+        });
+      }
+
+      uploadForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const button = uploadForm.querySelector('button[type="submit"]');
+        button.disabled = true;
+        uploadStatusEl.textContent = '';
+        uploadStatusEl.className = 'status';
+        uploadToggleBtn.style.display = 'none';
+        uploadJsonDiv.classList.remove('visible');
+
+        const formData = new FormData(uploadForm);
+
+        try {
+          const res = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData,
+          });
+
+          const data = await res.json();
+          uploadJsonEl.textContent = JSON.stringify(data, null, 2);
+          uploadToggleBtn.style.display = 'inline-block';
+
+          if (data.documentId && !data.error) {
+            uploadStatusEl.textContent = 'OK';
+            uploadStatusEl.classList.add('ok');
+          } else {
+            uploadStatusEl.textContent = 'Ошибка';
+            uploadStatusEl.classList.add('error');
+          }
+        } catch (err) {
+          uploadStatusEl.textContent = 'Ошибка';
+          uploadStatusEl.classList.add('error');
+          uploadJsonEl.textContent = String(err);
+          uploadToggleBtn.style.display = 'inline-block';
+        } finally {
+          button.disabled = false;
+        }
+      });
+
+      folderButton?.addEventListener('click', async () => {
+        if (!(folderInput instanceof HTMLInputElement) || !folderInput.files || folderInput.files.length === 0) {
+          batchStatusEl.textContent = 'Ошибка';
+          batchStatusEl.classList.add('error');
+          return;
+        }
+
+        folderButton.disabled = true;
+        batchStatusEl.textContent = '';
+        batchStatusEl.className = 'status';
+        batchToggleBtn.style.display = 'none';
+        batchJsonDiv.classList.remove('visible');
+
+        const formData = new FormData();
+        const fieldsToCopy = [
+          'docBaseUrl',
+          'sessionId',
+          'ourInn',
+          'ourKpp',
+          'ourLastName',
+          'ourFirstName',
+          'ourMiddleName',
+          'ourSnils',
+          'docType',
+          'number',
+          'date',
+          'note',
+        ];
+
+        for (const name of fieldsToCopy) {
+          const control = uploadForm.querySelector(`[name="${name}"]`);
+          if (control instanceof HTMLInputElement || control instanceof HTMLSelectElement) {
+            formData.append(name, control.value || '');
+          }
+        }
+
+        Array.from(folderInput.files).forEach((file) => {
+          formData.append('files', file, file.name);
+        });
+
+        try {
+          const res = await fetch('/api/upload/batch', {
+            method: 'POST',
+            body: formData,
+          });
+
+          const data = await res.json();
+          batchResultEl.textContent = JSON.stringify(data, null, 2);
+          batchToggleBtn.style.display = 'inline-block';
+
+          const allOk = data.results && data.results.every((r) => r.ok);
+          if (allOk) {
+            batchStatusEl.textContent = 'OK';
+            batchStatusEl.classList.add('ok');
+          } else {
+            batchStatusEl.textContent = 'Ошибка';
+            batchStatusEl.classList.add('error');
+          }
+        } catch (err) {
+          batchStatusEl.textContent = 'Ошибка';
+          batchStatusEl.classList.add('error');
+          batchResultEl.textContent = String(err);
+          batchToggleBtn.style.display = 'inline-block';
+        } finally {
+          folderButton.disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>
