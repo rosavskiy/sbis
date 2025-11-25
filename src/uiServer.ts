@@ -87,7 +87,7 @@ const extractWeekDescription = (name: string): string | undefined => {
   };
 
   const week = getIsoWeek(date);
-  return `Еженедельный отчет по выруске и наценке (${week} неделя)`;
+  return `Еженедельный отчет по выручке и наценке (${week} неделя)`;
 };
 
 const parseInnKppFromFilename = (name: string) => {
